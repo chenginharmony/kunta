@@ -7,6 +7,16 @@ import { useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 function PoolCard({ pool }: { pool: Pool }) {
+  // Get holders and activities from pool if available
+  const holders = (pool as any).holders ?? 'N/A';
+  const activities = (pool as any).activities ?? 'N/A';
+  // Get token price from pool.price (bigint, in USD)
+  function getTokenPrice() {
+    if (pool.price && pool.price > 0n) {
+      return Number(formatEther(pool.price));
+    }
+    return null;
+  }
   const formatNumber = (value: bigint) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -37,6 +47,15 @@ function PoolCard({ pool }: { pool: Pool }) {
           <div className="inline-flex items-center mt-2 px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
             {pool.type === 'v4' ? '🚀 Dynamic' : '📊 Static'}
           </div>
+          {/* Token Price Field (real value) */}
+          <div className="mt-2">
+            <p className="text-sm text-muted-foreground">Token Price</p>
+            <p className="text-lg font-mono">
+              {getTokenPrice() !== null && getTokenPrice() > 0
+                ? `$${getTokenPrice()!.toFixed(4)} USDT`
+                : 'N/A'}
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <p className="text-lg font-medium">{formatNumber(pool.dollarLiquidity)}</p>
@@ -52,7 +71,7 @@ function PoolCard({ pool }: { pool: Pool }) {
           <p className="text-sm text-muted-foreground">24h Volume</p>
         </div>
         <div>
-          <p className={`text-lg font-medium ${pool.percentDayChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <p className={`text-lg font-medium ${pool.percentDayChange >= 0 ? 'text-green-500' : 'text-red-500'}`}> 
             {formatPercent(pool.percentDayChange)}
           </p>
           <p className="text-sm text-muted-foreground">24h Change</p>
@@ -65,6 +84,17 @@ function PoolCard({ pool }: { pool: Pool }) {
             {pool.asset ? formatNumber(BigInt(pool.asset.marketCapUsd)) : '$0'}
           </p>
           <p className="text-sm text-muted-foreground">Market Cap</p>
+        </div>
+        <div>
+          <p className="text-lg font-medium">{holders}</p>
+          <p className="text-sm text-muted-foreground">Holders</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <p className="text-lg font-medium">{activities}</p>
+          <p className="text-sm text-muted-foreground">Activities</p>
         </div>
       </div>
 
