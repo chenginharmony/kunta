@@ -23,11 +23,21 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container py-3 px-4 mx-auto">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
-              Doppler Pools
-            </span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
+                Doppler Pools
+              </span>
+            </Link>
+            {/* Searchbar */}
+            <form className="hidden md:block">
+              <input
+                type="text"
+                placeholder="Search pools..."
+                className="h-9 w-64 rounded-md border bg-muted/50 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              />
+            </form>
+          </div>
 
           {isConnected && address ? (
             <div className="flex items-center gap-4">

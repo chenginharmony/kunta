@@ -8,26 +8,9 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { useAccount, usePublicClient, useBalance, useSwitchChain } from "wagmi"
 import { useWalletClient } from "wagmi"
-import { 
-  Quoter,
-} from "@whetstone-research/doppler-sdk"
 import { getAddresses } from "@whetstone-research/doppler-sdk"
-import { CommandBuilder, V4ActionBuilder, V4ActionType } from "doppler-router"
-import { dopplerLensQuoterAbi } from "@/lib/abis/dopplerLens"
 
-// Minimal ABI for UniversalRouter execute function
-const universalRouterAbi = [
-  {
-    name: "execute",
-    type: "function",
-    inputs: [
-      { name: "commands", type: "bytes", internalType: "bytes" },
-      { name: "inputs", type: "bytes[]", internalType: "bytes[]" }
-    ],
-    outputs: [],
-    stateMutability: "payable"
-  }
-] as const
+// ...existing code...
 
 // DN404 ABI for mirrorERC721 function
 const dn404Abi = [
@@ -1074,10 +1057,22 @@ export default function PoolDetails() {
             <p className="text-muted-foreground">
               {pool.baseToken.name} / {pool.quoteToken.name}
             </p>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-wrap">
               <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                 {pool.type === 'v4' ? '🚀 Dynamic Auction' : '📊 Static Auction'}
               </div>
+              {/* Migration Badge */}
+              {pool.asset?.migrated && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-300">
+                  Migrated{pool.asset?.migratedAt ? ` (${new Date(Number(pool.asset.migratedAt) * 1000).toLocaleDateString()})` : ''}
+                </span>
+              )}
+              {/* Auction Over Badge */}
+              {pool.v4Config && Date.now() > Number(pool.v4Config.endingTime) * 1000 && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                  Auction Over
+                </span>
+              )}
               {nftMirrorAddress && (
                 <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-500">
                   🎨 Doppler404
@@ -1124,6 +1119,22 @@ export default function PoolDetails() {
               <p className="text-sm text-muted-foreground">Auction Type</p>
               <p className="text-lg">{pool.type === 'v4' ? 'Dynamic (V4)' : 'Static (V3)'}</p>
             </div>
+            {pool.v4Config && (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground">Auction Start</p>
+                  <p className="text-lg">{new Date(Number(pool.v4Config.startingTime) * 1000).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Auction End</p>
+                  <p className="text-lg">{new Date(Number(pool.v4Config.endingTime) * 1000).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Epoch Length</p>
+                  <p className="text-lg">{Number(pool.v4Config.epochLength) / 3600} hours</p>
+                </div>
+              </>
+            )}
             <div>
               <p className="text-sm text-muted-foreground">Created</p>
               <p className="text-lg">{new Date(Number(pool.createdAt) * 1000).toLocaleDateString()}</p>
@@ -1135,6 +1146,13 @@ export default function PoolDetails() {
             <div>
               <p className="text-sm text-muted-foreground">Token Address</p>
               <p className="text-lg font-mono text-sm break-all">{pool.baseToken.address}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Migration Status</p>
+              <p className="text-lg">{pool.asset?.migrated ? `Migrated${pool.asset?.migratedAt ? ` at ${new Date(Number(pool.asset.migratedAt) * 1000).toLocaleString()}` : ''}` : 'Active'}</p>
+              {pool.asset?.v2Pool && (
+                <p className="text-xs text-muted-foreground">Migrated to V2 Pool: <span className="font-mono break-all">{pool.asset.v2Pool}</span></p>
+              )}
             </div>
             {nftMirrorAddress && (
               <div>

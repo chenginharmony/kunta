@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { usePools, PoolFilter } from "@/hooks/usePools"
-import { Pool } from "@/utils/graphql"
+import { Pool, Token } from "@/utils/graphql"
 import { formatEther } from "viem"
 import { useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 function PoolCard({ pool }: { pool: Pool }) {
+  // pool.baseToken now includes creatorAddress (optional)
   // Get holders and activities from pool if available
   const holders = (pool as any).holders ?? 'N/A';
   const activities = (pool as any).activities ?? 'N/A';
@@ -35,72 +36,67 @@ function PoolCard({ pool }: { pool: Pool }) {
   }
 
   return (
-    <div className="border border-primary/20 rounded-lg p-6 bg-card/50 backdrop-blur hover:border-primary/40 transition-all">
-      <div className="flex justify-between items-start mb-4">
+    <div className="border border-primary/20 rounded-lg p-3 bg-card/50 backdrop-blur hover:border-primary/40 transition-all flex flex-col gap-2 min-w-0">
+      <div className="flex justify-between items-center gap-2">
         <div>
-          <h2 className="text-2xl font-semibold">
+          <h2 className="text-lg font-semibold leading-tight">
             {pool.baseToken.symbol}/{pool.quoteToken.symbol}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-xs text-muted-foreground truncate max-w-[120px]">
             {pool.baseToken.name} / {pool.quoteToken.name}
           </p>
-          <div className="inline-flex items-center mt-2 px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-            {pool.type === 'v4' ? '🚀 Dynamic' : '📊 Static'}
-          </div>
-          {/* Token Price Field (real value) */}
-          <div className="mt-2">
-            <p className="text-sm text-muted-foreground">Token Price</p>
-            <p className="text-lg font-mono">
-              {getTokenPrice() !== null && getTokenPrice() > 0
-                ? `$${getTokenPrice()!.toFixed(4)} USDT`
-                : 'N/A'}
+          {/* Owner/Creator */}
+          {pool.baseToken.creatorAddress && (
+            <p className="text-[10px] text-muted-foreground mt-1 truncate max-w-[120px]">
+              Owner/Creator: <span className="font-mono">{pool.baseToken.creatorAddress}</span>
             </p>
+          )}
+        </div>
+        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+          {pool.type === 'v4' ? '🚀' : '📊'}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs mb-1">
+        <div>
+          <span className="text-muted-foreground">Market Cap</span>
+          <div>{pool.asset ? formatNumber(BigInt(pool.asset.marketCapUsd)) : '$0'}</div>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Liquidity</span>
+          <div>{pool.dollarLiquidity ? formatNumber(pool.dollarLiquidity) : '$0'}</div>
+        </div>
+        <div>
+          <span className="text-muted-foreground">24h Volume</span>
+          <div>{pool.dailyVolume ? formatNumber(BigInt(pool.dailyVolume.volumeUsd)) : '$0'}</div>
+        </div>
+        <div>
+          <span className="text-muted-foreground">24h Change</span>
+          <div className={pool.percentDayChange >= 0 ? 'text-green-500' : 'text-red-500'}>
+            {formatPercent(pool.percentDayChange)}
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-lg font-medium">{formatNumber(pool.dollarLiquidity)}</p>
-          <p className="text-sm text-muted-foreground">Liquidity</p>
+        <div>
+          <span className="text-muted-foreground">Holders</span>
+          <div>{holders}</div>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Activities</span>
+          <div>{activities}</div>
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="flex justify-between items-center gap-2">
         <div>
-          <p className="text-lg font-medium">
-            {pool.dailyVolume ? formatNumber(BigInt(pool.dailyVolume.volumeUsd)) : '$0'}
-          </p>
-          <p className="text-sm text-muted-foreground">24h Volume</p>
+          <span className="text-xs text-muted-foreground">Token Price</span>
+          <span className="text-sm font-mono">
+            {getTokenPrice() !== null && getTokenPrice() > 0
+              ? `$${getTokenPrice()!.toFixed(4)}`
+              : 'N/A'}
+          </span>
         </div>
-        <div>
-          <p className={`text-lg font-medium ${pool.percentDayChange >= 0 ? 'text-green-500' : 'text-red-500'}`}> 
-            {formatPercent(pool.percentDayChange)}
-          </p>
-          <p className="text-sm text-muted-foreground">24h Change</p>
-        </div>
+        <Link to={`/pool/${pool.address}?chainId=${pool.chainId}`}>
+          <Button variant="secondary" className="w-full">View</Button>
+        </Link>
       </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <p className="text-lg font-medium">
-            {pool.asset ? formatNumber(BigInt(pool.asset.marketCapUsd)) : '$0'}
-          </p>
-          <p className="text-sm text-muted-foreground">Market Cap</p>
-        </div>
-        <div>
-          <p className="text-lg font-medium">{holders}</p>
-          <p className="text-sm text-muted-foreground">Holders</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <p className="text-lg font-medium">{activities}</p>
-          <p className="text-sm text-muted-foreground">Activities</p>
-        </div>
-      </div>
-
-      <Link to={`/pool/${pool.address}?chainId=${pool.chainId}`}>
-        <Button variant="secondary" className="w-full">View Details</Button>
-      </Link>
     </div>
   )
 }
@@ -133,8 +129,48 @@ export default function AllPools() {
     )
   }
 
+  // Stats for cards
+  const activePools = pools?.items?.length ?? 0;
+  const totalMarketcap = pools?.items?.reduce((acc, pool) => acc + Number(pool.asset?.marketCapUsd ?? 0), 0) ?? 0;
+  const staticPools = pools?.items?.filter(pool => pool.type !== 'v4').length ?? 0;
+  const dynamicPools = pools?.items?.filter(pool => pool.type === 'v4').length ?? 0;
+
+  // Helper to format large numbers compactly
+  function compactNumber(num: number, forceInt = false) {
+    if (forceInt && num < 1000) return Math.round(num).toString();
+    if (num >= 1e12) return (num / 1e12).toPrecision(3) + 'T';
+    if (num >= 1e9) return (num / 1e9).toPrecision(3) + 'B';
+    if (num >= 1e6) return (num / 1e6).toPrecision(3) + 'M';
+    if (num >= 1e3) return (num / 1e3).toPrecision(3) + 'K';
+    return num.toPrecision(3);
+  }
+
   return (
     <div className="p-8">
+      {/* Compact Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
+        <div className="bg-card border rounded-lg p-2 flex flex-col items-center justify-center shadow-sm">
+          <span className="text-lg font-bold">{compactNumber(activePools)}</span>
+          <span className="text-[10px] text-muted-foreground mt-1">Active Pools</span>
+        </div>
+        <div className="bg-card border rounded-lg p-2 flex flex-col items-center justify-center shadow-sm">
+          <span className="text-lg font-bold">${compactNumber(totalMarketcap)}</span>
+          <span className="text-[10px] text-muted-foreground mt-1">Marketcap</span>
+        </div>
+        <div className="bg-card border rounded-lg p-2 flex flex-col items-center justify-center shadow-sm">
+          <span className="text-lg font-bold">{compactNumber(staticPools, true)}</span>
+          <span className="text-[10px] text-muted-foreground mt-1">📊 Static Only</span>
+        </div>
+        <div className="bg-card border rounded-lg p-2 flex flex-col items-center justify-center shadow-sm">
+          <span className="text-lg font-bold">{compactNumber(dynamicPools, true)}</span>
+          <span className="text-[10px] text-muted-foreground mt-1">🚀 Dynamic Only</span>
+        </div>
+        <div className="bg-card border rounded-lg p-2 flex flex-col items-center justify-center shadow-sm">
+          <Link to="/debug/quote" className="text-primary font-bold underline text-sm">Quote Debugger</Link>
+          <span className="text-[10px] text-muted-foreground mt-1">Quick Quotes</span>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold text-primary">Active Pools</h1>
         <div className="flex items-center gap-2">
@@ -152,7 +188,7 @@ export default function AllPools() {
         </TabsList>
       </Tabs>
       
-      <div className="grid gap-6">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {pools?.items?.map((pool) => (
           <PoolCard key={pool.address} pool={pool} />
         ))}
